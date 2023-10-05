@@ -10,6 +10,9 @@
       "eas": {
         "projectId": "2c351e40-df1a-4e7b-b0d7-9a9481e4ca5b"
       }
+    },
+    "android": {
+      "package": "com.kantotl.chatapp"
     }
   }
 }
