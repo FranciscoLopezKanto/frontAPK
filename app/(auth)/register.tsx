@@ -35,10 +35,10 @@ const Register = () => {
 
   return (
     <View style={styles.container}>
-      <TextInput placeholder='User' value={username} onChangeText={setUsername} style={styles.inputField} />
+      <TextInput placeholder='Pile User' value={username} onChangeText={setUsername} style={styles.inputField} />
 
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.inputField} />
-      <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry style={styles.inputField} />
+      <TextInput placeholder="Pile Email" value={email} onChangeText={setEmail} style={styles.inputField} />
+      <TextInput placeholder="Pile Password" value={password} onChangeText={setPassword} secureTextEntry style={styles.inputField} />
 
       {loading ? <ActivityIndicator /> : <Button onPress={handleRegistration} title="Create free account"></Button>}
     </View>
