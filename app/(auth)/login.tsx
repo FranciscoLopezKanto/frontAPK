@@ -31,8 +31,8 @@ const Login = ({ navigation }) => {
         source={{ uri: 'https://i.postimg.cc/j22C6cL4/Black-And-White-Globe-Y2k-Streetwear-Logo-1.png' }} // replace with your own image URL
       />
       <Text style={styles.imageText}>Pileteeeeeero!</Text>
-      <TextInput placeholder="Pile user" value={email} onChangeText={setEmail} style={styles.inputField} />
-      <TextInput placeholder="Pile password" value={password} onChangeText={setPassword} secureTextEntry style={styles.inputField} />
+      <TextInput placeholder="Pile Correo" value={email} onChangeText={setEmail} style={styles.inputField} />
+      <TextInput placeholder="Pile Password" value={password} onChangeText={setPassword} secureTextEntry style={styles.inputField} />
       <Button onPress={handleLogin} title="Login"></Button>
 
       <Link href="/register" asChild>
