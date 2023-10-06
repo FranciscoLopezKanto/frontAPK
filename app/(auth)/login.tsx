@@ -1,8 +1,5 @@
-import { Link } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth/react-native';
 import React, { useState } from 'react';
 import { View, StyleSheet, Image, TextInput, Button, Pressable, Text } from 'react-native';
-import { FIREBASE_AUTH } from '../../config/FirebaseConfig';
 import Spinner from 'react-native-loading-spinner-overlay';
 
 const Login = ({ navigation }) => {
@@ -13,10 +10,31 @@ const Login = ({ navigation }) => {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      const user = await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
-      console.log('signed in');
+
+      const response = await fetch('http://localhost:3000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Inicio de sesión exitoso:', data);
+      } else if (response.status === 401) {
+        const errorResponse = await response.json();
+        console.error('Error de inicio de sesión:', errorResponse.error);
+
+        alert('Credenciales incorrectas. Por favor, inténtelo de nuevo.');
+      } else {
+        console.error('Error al realizar la solicitud al backend');
+      }
     } catch (error) {
-      console.error('There was an error logging in:', error);
+      console.error('Error en la solicitud:', error);
     } finally {
       setLoading(false);
     }
@@ -28,18 +46,16 @@ const Login = ({ navigation }) => {
 
       <Image
         style={styles.logo}
-        source={{ uri: 'https://i.postimg.cc/j22C6cL4/Black-And-White-Globe-Y2k-Streetwear-Logo-1.png' }} // replace with your own image URL
+        source={{ uri: 'https://i.postimg.cc/j22C6cL4/Black-And-White-Globe-Y2k-Streetwear-Logo-1.png' }} // reemplaza con tu propia URL de imagen
       />
       <Text style={styles.imageText}>Pileteeeeeero!</Text>
       <TextInput placeholder="Pile Email" value={email} onChangeText={setEmail} style={styles.inputField} />
       <TextInput placeholder="Pile Password" value={password} onChangeText={setPassword} secureTextEntry style={styles.inputField} />
-      <Button onPress={handleLogin} title="Login"></Button>
+      <Button onPress={handleLogin} title="Login" />
 
-      <Link href="/register" asChild>
-        <Pressable style={styles.button}>
-          <Text>Don't have an account? Register</Text>
-        </Pressable>
-      </Link>
+      <Pressable style={styles.button} onPress={() => navigation.navigate('Register')}>
+        <Text>¿No eres Piletero? Registrate</Text>
+      </Pressable>
     </View>
   );
 };

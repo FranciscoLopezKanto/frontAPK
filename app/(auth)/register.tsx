@@ -1,8 +1,6 @@
-import { UserCredential, createUserWithEmailAndPassword } from 'firebase/auth/react-native';
 import React, { useState } from 'react';
 import { View, StyleSheet, TextInput, Button, ActivityIndicator } from 'react-native';
-import { FIREBASE_AUTH, FIRESTORE_DB } from '../../config/FirebaseConfig';
-import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
+import Spinner from 'react-native-loading-spinner-overlay';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -13,30 +11,40 @@ const Register = () => {
   const handleRegistration = async () => {
     try {
       setLoading(true);
-      const user = await createUserWithEmailAndPassword(FIREBASE_AUTH, email, password);
-      createUserInformation(user);
+
+      const response = await fetch('http://localhost:3000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          email: email,
+          password: password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Registro exitoso:', data);
+        // Realiza las acciones necesarias después del registro exitoso.
+        // Puede ser una navegación a una pantalla de inicio de sesión.
+        // navigation.navigate('Login');
+      } else {
+        console.error('Error en el registro');
+      }
     } catch (error) {
-      console.error('There was an error logging in:', error);
+      console.error('Error en la solicitud:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const createUserInformation = async (user: UserCredential) => {
-    try {
-      const docRef = await setDoc(doc(FIRESTORE_DB, `users/${user.user.uid}`), {
-        username,
-        email: user.user.email,
-      });
-    } catch (error) {
-      console.error('There was an error creating user information:', error);
-    }
-  };
-
   return (
     <View style={styles.container}>
-      <TextInput placeholder='Pile User' value={username} onChangeText={setUsername} style={styles.inputField} />
+      <Spinner visible={loading} />
 
+      <TextInput placeholder='Pile User' value={username} onChangeText={setUsername} style={styles.inputField} />
       <TextInput placeholder="Pile Email" value={email} onChangeText={setEmail} style={styles.inputField} />
       <TextInput placeholder="Pile Password" value={password} onChangeText={setPassword} secureTextEntry style={styles.inputField} />
 
@@ -63,3 +71,4 @@ const styles = StyleSheet.create({
 });
 
 export default Register;
+
