@@ -28,7 +28,7 @@ const Login = ({ navigation }) => {
 
       <Image
         style={styles.logo}
-        source={{ uri: 'https://i.postimg.cc/wjpJGgqd/pileta.jpg' }} // replace with your own image URL
+        source={{ uri: 'https://i.postimg.cc/j22C6cL4/Black-And-White-Globe-Y2k-Streetwear-Logo-1.png' }} // replace with your own image URL
       />
       <Text style={styles.imageText}>Pileteeeeeero!</Text>
       <TextInput placeholder="Pile user" value={email} onChangeText={setEmail} style={styles.inputField} />
