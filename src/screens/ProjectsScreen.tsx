@@ -1,15 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import EntypoIcon from 'react-native-vector-icons/Entypo';
 
 const ProjectsScreen: React.FC = () => {
-  const [teams, setTeams] = useState<any[]>([]); // Define un tipo para el estado "teams"
+  const [teams, setTeams] = useState<any[]>([]); 
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [newTeamDescription, setNewTeamDescription] = useState('');
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -53,34 +55,40 @@ const ProjectsScreen: React.FC = () => {
       return;
     }
 
+    setSelectedTeam(teamName); // Set team for confirmation modal
+    setModalVisible(true);
+  };
+
+  const confirmDeleteTeam = async () => {
+    if (selectedTeam === null) {
+      return;
+    }
+
     const token = await AsyncStorage.getItem('userToken');
 
     try {
-      await axios.delete(`http://localhost:3000/api/v1/teams/${teamName}`, {
+      await axios.delete(`http://localhost:3000/api/v1/teams/${selectedTeam}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const updatedTeams = teams.filter((team) => team.nombre !== teamName);
+      const updatedTeams = teams.filter((team) => team.nombre !== selectedTeam);
       setTeams(updatedTeams);
       setModalVisible(false);
     } catch (error) {
       console.error('Error al eliminar el equipo', error);
       setModalVisible(false);
     }
+
+    setSelectedTeam(null); // Limpia el equipo seleccionado después de eliminarlo
   };
 
   const handleAddTeam = async () => {
-    const newTeamName: string | null = "Veneco lab"; // Reemplaza esto con la lógica para obtener el nombre del nuevo equipo
-  
-    if (newTeamName !== null && typeof newTeamName === 'string') {
+    if (newTeamName !== '') {
       try {
-        // Asegúrate de ajustar la lógica para obtener la descripción del nuevo equipo
-        const newTeamDescription = "69 duendes por una misión lab"; // Reemplaza esto con la lógica para obtener la descripción
-  
         const token = await AsyncStorage.getItem('userToken');
-  
+
         if (token !== null && typeof token === 'string') {
           const newTeam = {
             name: newTeamName,
@@ -95,7 +103,6 @@ const ProjectsScreen: React.FC = () => {
   
           console.log('Equipo creado:', response.data);
   
-          // Verifica nuevamente que token no sea nulo antes de llamar a loadTeams
           if (token !== null) {
             loadTeams(token);
           }
@@ -105,9 +112,12 @@ const ProjectsScreen: React.FC = () => {
       } catch (error) {
         console.error('Error al crear el equipo', error);
       }
+
+      setNewTeamName(''); // Limpia los campos después de crear el equipo
+      setNewTeamDescription('');
+      setModalVisible(false);
     }
   };
-  
 
   return (
     <View style={styles.container}>
@@ -143,10 +153,10 @@ const ProjectsScreen: React.FC = () => {
         )}
       />
       {/* Botón de agregar equipo */}
-      <TouchableOpacity style={styles.addButton} onPress={handleAddTeam}>
+      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
         <EntypoIcon name="plus" size={30} color="green" />
       </TouchableOpacity>
-      {/* Modal de confirmación */}
+      {/* Modal de confirmación o creación de equipo */}
       <Modal
         transparent={true}
         visible={isModalVisible}
@@ -156,19 +166,35 @@ const ProjectsScreen: React.FC = () => {
         }}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.confirmationBox}>
-            <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
-            <View style={styles.modalButtons}>
-              <Button
-                title="Eliminar"
-                onPress={() => handleDeleteTeam(selectedTeam)}
-              />
-              <Button
-                title="Cancelar"
-                onPress={() => setModalVisible(false)}
-              />
+          {selectedTeam ? ( // Confirmation modal
+            <View style={styles.confirmationBox}>
+              <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
+              <View style={styles.modalButtons}>
+                <Button title="Eliminar" onPress={confirmDeleteTeam} />
+                <Button title="Cancelar" onPress={() => setModalVisible(false)} />
+              </View>
             </View>
-          </View>
+          ) : ( // New team creation modal
+            <View style={styles.confirmationBox}>
+              <Text>Crear Nuevo Equipo</Text>
+              <Text>Nombre:</Text>
+              <TextInput
+                value={newTeamName}
+                onChangeText={(text) => setNewTeamName(text)}
+                style={styles.input}
+              />
+              <Text>Descripción:</Text>
+              <TextInput
+                value={newTeamDescription}
+                onChangeText={(text) => setNewTeamDescription(text)}
+                style={styles.input}
+              />
+              <View style={styles.modalButtons}>
+                <Button title="Crear" onPress={handleAddTeam} />
+                <Button title="Cancelar" onPress={() => setModalVisible(false)} />
+              </View>
+            </View>
+          )}
         </View>
       </Modal>
     </View>
@@ -242,6 +268,12 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
   },
 });
 
