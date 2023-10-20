@@ -1,17 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import EntypoIcon from 'react-native-vector-icons/Entypo';
 
 const ProjectsScreen: React.FC = () => {
-  const [teams, setTeams] = useState<any[]>([]); // Corrección: Define el tipo de 'teams'
+  const [teams, setTeams] = useState<any[]>([]); // Define un tipo para el estado "teams"
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [newTeamName, setNewTeamName] = useState('');
-  const [newTeamDescription, setNewTeamDescription] = useState('');
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -74,41 +72,42 @@ const ProjectsScreen: React.FC = () => {
   };
 
   const handleAddTeam = async () => {
-    if (!newTeamName || !newTeamDescription) {
-      alert('Por favor, ingresa un nombre y una descripción para el nuevo equipo.');
-      return;
-    }
-
-    const token = await AsyncStorage.getItem('userToken');
-
-    try {
-      const response = await axios.post(
-        'http://localhost:3000/api/v1/teams/crearTeam',
-        {
-          name: newTeamName,
-          descripcion: newTeamDescription,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+    const newTeamName: string | null = "Veneco lab"; // Reemplaza esto con la lógica para obtener el nombre del nuevo equipo
+  
+    if (newTeamName !== null && typeof newTeamName === 'string') {
+      try {
+        // Asegúrate de ajustar la lógica para obtener la descripción del nuevo equipo
+        const newTeamDescription = "69 duendes por una misión lab"; // Reemplaza esto con la lógica para obtener la descripción
+  
+        const token = await AsyncStorage.getItem('userToken');
+  
+        if (token !== null && typeof token === 'string') {
+          const newTeam = {
+            name: newTeamName,
+            descripcion: newTeamDescription,
+          };
+  
+          const response = await axios.post('http://localhost:3000/api/v1/teams/crearTeam', newTeam, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+  
+          console.log('Equipo creado:', response.data);
+  
+          // Verifica nuevamente que token no sea nulo antes de llamar a loadTeams
+          if (token !== null) {
+            loadTeams(token);
+          }
+        } else {
+          console.error('El token es nulo o no es una cadena válida');
         }
-      );
-
-      const newTeam = {
-        id: response.data.id,
-        nombre: newTeamName,
-        descripcion: newTeamDescription,
-      };
-
-      setTeams([...teams, newTeam]);
-      setNewTeamName('');
-      setNewTeamDescription('');
-      setModalVisible(false);
-    } catch (error) {
-      console.error('Error al agregar el nuevo equipo', error);
+      } catch (error) {
+        console.error('Error al crear el equipo', error);
+      }
     }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -143,9 +142,11 @@ const ProjectsScreen: React.FC = () => {
           </View>
         )}
       />
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+      {/* Botón de agregar equipo */}
+      <TouchableOpacity style={styles.addButton} onPress={handleAddTeam}>
         <EntypoIcon name="plus" size={30} color="green" />
       </TouchableOpacity>
+      {/* Modal de confirmación */}
       <Modal
         transparent={true}
         visible={isModalVisible}
@@ -156,57 +157,17 @@ const ProjectsScreen: React.FC = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.confirmationBox}>
-            {selectedTeam ? (
-              <>
-                <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
-                <View style={styles.modalButtons}>
-                  <Button
-                    title="Eliminar"
-                    onPress={() => handleDeleteTeam(selectedTeam)}
-                    style={styles.modalButton} // Estilo para los botones
-                  />
-                  <Button
-                    title="Cancelar"
-                    onPress={() => {
-                      setModalVisible(false);
-                      setSelectedTeam(null);
-                    }}
-                    style={styles.modalButton} // Estilo para los botones
-                  />
-                </View>
-              </>
-            ) : (
-              <>
-                <Text style={styles.modalText}>Agregar un nuevo equipo:</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nombre del equipo"
-                  value={newTeamName}
-                  onChangeText={setNewTeamName}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Descripción del equipo"
-                  value={newTeamDescription}
-                  onChangeText={setNewTeamDescription}
-                />
-                <View style={styles.modalButtons}>
-                  <Button
-                    title="Agregar"
-                    onPress={handleAddTeam}
-                    style={styles.modalButton} // Estilo para los botones
-                  />
-                  <Button
-                    title="Cancelar"
-                    onPress={() => {
-                      setModalVisible(false);
-                      setSelectedTeam(null);
-                    }}
-                    style={styles.modalButton} // Estilo para los botones
-                  />
-                </View>
-              </>
-            )}
+            <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
+            <View style={styles.modalButtons}>
+              <Button
+                title="Eliminar"
+                onPress={() => handleDeleteTeam(selectedTeam)}
+              />
+              <Button
+                title="Cancelar"
+                onPress={() => setModalVisible(false)}
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -221,7 +182,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
@@ -234,7 +195,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 10, // Aumenta el radio del borde
+    borderRadius: 10,
+    width: 300,
   },
   teamInfo: {
     flex: 1,
@@ -260,30 +222,15 @@ const styles = StyleSheet.create({
   },
   confirmationBox: {
     backgroundColor: 'white',
-    padding: 20, // Aumenta el espaciado
+    padding: 10,
     borderRadius: 10,
     elevation: 5,
-    width: 300,
+    width: 250,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 20,
-  },
-  modalButton: {
-    flex: 1, // Para que ambos botones ocupen el mismo espacio
-  },
-  modalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 10,
-    padding: 8,
   },
   addButton: {
     position: 'absolute',
