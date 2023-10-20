@@ -1,3 +1,4 @@
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
@@ -50,7 +51,43 @@ const ProjectsScreen: React.FC = () => {
         console.error('Error al cargar la lista de equipos', error);
       });
   };
-
+  const handleSaveEditTeam = async () => {
+    if (editingTeam.id && editingTeam.nombre !== '') {
+      const token = await AsyncStorage.getItem('userToken');
+  
+      if (token) {
+        try {
+          const response = await axios.patch(
+            `http://localhost:3000/api/v1/teams/editarteam/${editingTeam.id}`,
+            {
+              nombre: editingTeam.nombre,
+              descripcion: editingTeam.descripcion,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+  
+          console.log('Equipo editado:', response.data);
+  
+          setEditingTeam({ id: null, nombre: '', descripcion: '' });
+          setModalVisible(false);
+  
+          // Realizar un reload de equipos con un retraso de 1 segundo (1000 ms)
+          setTimeout(() => {
+            loadTeams(token);
+          }, 1000);
+        } catch (error) {
+          console.error('Error al editar el equipo', error);
+        }
+      } else {
+        console.error('El token es nulo o no es una cadena válida');
+      }
+    }
+  };
+  
   const handleDeleteTeam = async (teamName: string | null) => {
     if (teamName === null) {
       return;
@@ -90,37 +127,7 @@ const ProjectsScreen: React.FC = () => {
     setSelectedTeam(null);
   };
 
-  const handleSaveEditTeam = async () => {
-    if (editingTeam.id && editingTeam.nombre !== '') {
-      const token = await AsyncStorage.getItem('userToken');
 
-      try {
-        const response = await axios.patch(
-          `http://localhost:3000/api/v1/teams/editarteam/${editingTeam.id}`,
-          {
-            nombre: editingTeam.nombre,
-            descripcion: editingTeam.descripcion,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        console.log('Equipo editado:', response.data);
-
-        if (token) {
-          loadTeams(token);
-        }
-      } catch (error) {
-        console.error('Error al editar el equipo', error);
-      }
-
-      setEditingTeam({ id: null, nombre: '', descripcion: '' });
-      setModalVisible(false);
-    }
-  };
 
   const handleCancelEditTeam = () => {
     setEditingTeam({ id: null, nombre: '', descripcion: '' });
