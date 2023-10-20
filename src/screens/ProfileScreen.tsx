@@ -18,7 +18,9 @@ const ProfileScreen: React.FC = () => {
   const [editType, setEditType] = useState<string | null>(null);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const navigation = useNavigation();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const getProfile = async () => {
@@ -56,49 +58,51 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleEditProfile = async () => {
-    // Lógica para editar el perfil aquí
-    // Verifica si el nombre de usuario o contraseña son diferentes de vacío y actualiza el backend si es necesario
-  
-    // Comprueba si se proporcionó un nuevo nombre de usuario y si no, utiliza el actual
     const updatedUsername = newUsername !== '' ? newUsername : userProfile.username;
-  
-    // Comprueba si se proporcionó una nueva contraseña y si no, utiliza la actual
-    const updatedPassword = newPassword !== '' ? newPassword : userProfile.password;
-  
+    const updatedPassword = newPassword;
+
+    if (!updatedPassword || updatedPassword.length < 6) {
+      setPasswordError('La contraseña debe contener al menos 6 caracteres');
+      return;
+    }
+
+    // Limpia el mensaje de error si no hubo errores
+    setPasswordError(null);
+
     // Enviar la solicitud al backend para actualizar el perfil
     const token = await AsyncStorage.getItem('userToken');
     const updateData = {
       name: updatedUsername,
       password: updatedPassword,
     };
-  
+
     try {
       await axios.patch('http://localhost:3000/api/v1/auth/editarperfil', updateData, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-  
+
       // Actualiza el perfil localmente
       setUserProfile({ ...userProfile, username: updatedUsername, password: updatedPassword });
-  
+
       // Muestra un mensaje de cambio realizado
       setLogoutMessage('Cambio realizado exitosamente');
-  
+
       // Temporizador para borrar el mensaje después de 2 segundos y refrescar la pantalla
       setTimeout(() => {
         setLogoutMessage(null);
         // Realiza un nuevo llamado a getProfile para actualizar la pantalla con los datos actualizados
-        
-      });
-  
+        getProfile();
+      }, 1000);
+
       setEditOptionsModalVisible(false);
     } catch (error) {
       console.error('Error al actualizar el perfil', error);
+      setErrorMessage('Hubo un error al actualizar el perfil, por favor inténtalo de nuevo.');
     }
   };
-  
-  
+
   const handleLogout = async () => {
     await clearAuthToken();
     setLogoutMessage('Has cerrado sesión');
@@ -174,6 +178,11 @@ const ProfileScreen: React.FC = () => {
                 />
               </View>
             </ScrollView>
+            <View style={styles.errorContainer}>
+              {passwordError && (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              )}
+            </View>
             <View style={styles.buttonContainer}>
               <Button title="Guardar" onPress={handleEditProfile} />
               <Button title="Cancelar" onPress={() => setEditOptionsModalVisible(false)} />
@@ -205,11 +214,13 @@ const ProfileScreen: React.FC = () => {
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4f4f4',
     padding: 16,
+    
   },
   profileHeader: {
     alignItems: 'center',
@@ -309,6 +320,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  errorContainer: {
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+  },
 });
 
 export default ProfileScreen;
+function getProfile() {
+  throw new Error('Function not implemented.');
+}
+
