@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Cambia 'FontAwesome' al ícono que desees usar
+import Icon from 'react-native-vector-icons/FontAwesome';
+import EntypoIcon from 'react-native-vector-icons/Entypo'; // Usamos el ícono Entypo para el botón de agregar
 
 const ProjectsScreen: React.FC = () => {
   const [teams, setTeams] = useState([]);
@@ -47,7 +48,11 @@ const ProjectsScreen: React.FC = () => {
       });
   };
 
-  const handleDeleteTeam = async (teamName: string) => {
+  const handleDeleteTeam = async (teamName: string | null) => {
+    if (teamName === null) {
+      return;
+    }
+
     const token = await AsyncStorage.getItem('userToken');
 
     try {
@@ -57,22 +62,23 @@ const ProjectsScreen: React.FC = () => {
         },
       });
 
-      // Actualizar la lista de equipos después de eliminar
       const updatedTeams = teams.filter((team) => team.nombre !== teamName);
       setTeams(updatedTeams);
-
-      // Cierra el modal
       setModalVisible(false);
     } catch (error) {
       console.error('Error al eliminar el equipo', error);
-      // Cierra el modal
       setModalVisible(false);
     }
   };
 
+  const handleAddTeam = () => {
+    // Aquí puedes implementar la lógica para agregar un nuevo equipo
+    console.log('Agregar nuevo equipo');
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Selecciona un equipo:</Text>
+      <Text style={styles.selectText}>Selecciona un equipo:</Text>
       <FlatList
         data={teams}
         keyExtractor={(item) => item.id.toString()}
@@ -84,9 +90,9 @@ const ProjectsScreen: React.FC = () => {
             </View>
             <View style={styles.teamIcons}>
               <Icon
-                name="pencil" // Nombre del ícono para editar
-                size={20} // Tamaño del ícono
-                color="blue" // Color del ícono
+                name="pencil"
+                size={20}
+                color="blue"
                 onPress={() => {
                   // Lógica de editar
                 }}
@@ -94,40 +100,44 @@ const ProjectsScreen: React.FC = () => {
               <TouchableOpacity
                 onPress={() => {
                   setSelectedTeam(item.nombre);
-                  // Abre el modal de confirmación
                   setModalVisible(true);
                 }}
               >
-                <Icon
-                  name="times" // Nombre del ícono para eliminar
-                  size={20} // Tamaño del ícono
-                  color="red" // Color del ícono
-                />
+                <Icon name="times" size={20} color="red" />
               </TouchableOpacity>
             </View>
           </View>
         )}
       />
+      {/* Botón de agregar equipo */}
+      <TouchableOpacity style={styles.addButton} onPress={handleAddTeam}>
+        <EntypoIcon name="plus" size={30} color="green" />
+      </TouchableOpacity>
       {/* Modal de confirmación */}
       <Modal
-  transparent={true}
-  visible={isModalVisible}
-  animationType="slide"
->
-  <View style={styles.modalContainer}>
-    <View style={styles.confirmationBox}>
-      <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
-      <Button
-        title="Eliminar"
-        onPress={() => handleDeleteTeam(selectedTeam)}
-      />
-      <Button
-        title="Cancelar"
-        onPress={() => setModalVisible(false)}
-      />
-    </View>
-  </View>
-</Modal>
+        transparent={true}
+        visible={isModalVisible}
+        animationType="slide"
+        onRequestClose={() => {
+          setModalVisible(false);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.confirmationBox}>
+            <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
+            <View style={styles.modalButtons}>
+              <Button
+                title="Eliminar"
+                onPress={() => handleDeleteTeam(selectedTeam)}
+              />
+              <Button
+                title="Cancelar"
+                onPress={() => setModalVisible(false)}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -138,16 +148,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  selectText: {
+    fontSize: 24, 
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
   teamItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginVertical: 10,
-    padding: 10,
+    padding: 20,
     backgroundColor: '#f5f5f5',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
+    borderRadius: 15,
+    width: 320,
   },
   teamInfo: {
     flex: 1,
@@ -170,6 +186,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  confirmationBox: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 10,
+    elevation: 5,
+    width: 250,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  addButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
