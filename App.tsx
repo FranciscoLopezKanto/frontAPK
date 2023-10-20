@@ -9,16 +9,16 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignInScreen from './src/screens/SignInScreen';
 import RecoveryScreen from './src/screens/RecoveryScreen';
-import ProjectsListScreen from './src/screens/ProjectsListScreen';
+import ProjectsScreen from './src/screens/ProjectsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [userIsLoggedIn, setUserIsLoggedIn] = useState(false); // Declaración de userIsLoggedIn y setUserIsLoggedIn
+  const [userIsLoggedIn, setUserIsLoggedIn] = useState(true); // Declaración de userIsLoggedIn y setUserIsLoggedIn
 
   useEffect(() => {
-    setUserIsLoggedIn(false);
+    setUserIsLoggedIn(true);
   }, []);
 
   return (
@@ -35,7 +35,7 @@ export default function App() {
         <Stack.Screen name="Signin" component={SignInScreen} />
         <Stack.Screen name="Home" component={TabsScreen} />
         <Stack.Screen name="Recovery" component={RecoveryScreen} />
-        <Stack.Screen name='ProjectsList' component={ProjectsListScreen} />
+        <Stack.Screen name='Projects' component={ProjectsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -51,7 +51,7 @@ export default function App() {
               iconName = focused ? 'home' : 'home-outline';
             } else if (route.name === 'Profile') {
               iconName = focused ? 'person' : 'person-outline';
-            } else if (route.name === 'ProjectsList') {
+            } else if (route.name === 'Projects') {
               iconName = focused ? 'list' : 'list-outline';
             }
 
@@ -73,8 +73,8 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Tab.Screen
-          name="ProjectsList"
-          component={ProjectsListScreen}
+          name="Projects"
+          component={ProjectsScreen}
           options={{ headerShown: false }} // Oculta el encabezado para esta pantalla
         />
       </Tab.Navigator>

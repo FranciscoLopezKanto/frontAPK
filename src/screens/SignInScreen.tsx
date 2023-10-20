@@ -30,7 +30,10 @@ const RegisterScreen = ({ navigation }: any) => {
         email,
         password,
       });
-      navigation.navigate('Login');
+      setTimeout(() => {
+        navigation.navigate('Home' as never);
+      }, 2000);
+      console.log("usuario registrado");
     } catch (e: any) {
       setError(true);
       console.error("Error al iniciar sesión:", e); // Agrega esta línea para obtener información detallada del error
@@ -119,6 +122,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   input: {
+    backgroundColor: '#ffffff',
     width: 240,
     marginBottom: 20,
     padding: 5,
@@ -162,6 +166,7 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flexDirection: 'row',
+    backgroundColor: '#fff',
     alignItems: 'center',
     flex: 1,
     borderColor: 'black',

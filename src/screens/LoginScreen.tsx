@@ -81,7 +81,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setUserIsLoggedIn }) => {
           <TouchableOpacity onPress={() => handleLogin(email, password)} style={styles.button}>
             <Text style={styles.buttonText}>Iniciar Sesión</Text>
           </TouchableOpacity>
-          <Text onPress={() => navigation.navigate('SignIn'as never)} style={styles.link}>
+          <Text onPress={() => navigation.navigate('Signin'as never)} style={styles.link}>
             ¿No eres un piletero? Conviértete en uno aquí.
           </Text>
         </View>
@@ -118,6 +118,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   input: {
+    backgroundColor: '#fff',
     width: 240,
     marginBottom: 20,
     padding: 5,
@@ -156,6 +157,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   passwordInput: {
+    backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,

@@ -19,7 +19,7 @@ const RecoveryScreen = () => {
       console.log('Contraseña restablecida con éxito.');
       setSuccessMessage('La contraseña se ha enviado al correo.');
       setTimeout(() => {
-        navigation.navigate('Login'); // Redirige a la pantalla de inicio de sesión
+        navigation.navigate('Login'as never); // Redirige a la pantalla de inicio de sesión
       }, 2000);
     })
     .catch(error => {
