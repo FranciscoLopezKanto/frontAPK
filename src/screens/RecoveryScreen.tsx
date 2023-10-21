@@ -62,7 +62,7 @@ const RecoveryScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // Estilos anteriores
+  
   errorText: {
     color: 'red',
     marginBottom: 10,
@@ -81,7 +81,7 @@ container: {
   flex: 1,
   justifyContent: 'center',
   alignItems: 'center',
-  // No es necesario establecer un backgroundColor ya que el fondo se toma de la imagen de fondo.
+ 
 },
 container2: {
   justifyContent: 'center',
@@ -89,7 +89,7 @@ container2: {
   paddingHorizontal: 15,
   paddingBottom: 10,
   borderRadius: 5,
-  backgroundColor: 'rgba(255, 255, 255, 0.8)', // Fondo semi-transparente blanco.
+  backgroundColor: 'rgba(255, 255, 255, 0.8)', // Fondo semi-transparente 
 },
 title: {
   fontSize: 24,

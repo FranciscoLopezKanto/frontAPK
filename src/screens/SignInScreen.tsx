@@ -31,12 +31,12 @@ const RegisterScreen = ({ navigation }: any) => {
         password,
       });
       setTimeout(() => {
-        navigation.navigate('Home' as never);
+        navigation.navigate('Login' as never);//te lleva al login al registrarse para logearse
       }, 2000);
       console.log("usuario registrado");
     } catch (e: any) {
       setError(true);
-      console.error("Error al iniciar sesión:", e); // Agrega esta línea para obtener información detallada del error
+      console.error("Error al iniciar sesión:", e); 
       setErrorMessage("Ocurrió un error al iniciar sesión.");
     }
     

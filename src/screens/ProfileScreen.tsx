@@ -65,11 +65,8 @@ const ProfileScreen: React.FC = () => {
       setPasswordError('La contraseña debe contener al menos 6 caracteres');
       return;
     }
-
-    // Limpia el mensaje de error si no hubo errores
     setPasswordError(null);
 
-    // Enviar la solicitud al backend para actualizar el perfil
     const token = await AsyncStorage.getItem('userToken');
     const updateData = {
       name: updatedUsername,
@@ -83,13 +80,11 @@ const ProfileScreen: React.FC = () => {
         },
       });
 
-      // Actualiza el perfil localmente
       setUserProfile({ ...userProfile, username: updatedUsername, password: updatedPassword });
 
-      // Muestra un mensaje de cambio realizado
+      // Muestra un mensaje de cambio 
       setLogoutMessage('Cambio realizado exitosamente');
 
-      // Temporizador para borrar el mensaje después de 2 segundos y refrescar la pantalla
       setTimeout(() => {
         setLogoutMessage(null);
         // Realiza un nuevo llamado a getProfile para actualizar la pantalla con los datos actualizados
@@ -332,4 +327,3 @@ export default ProfileScreen;
 function getProfile() {
   throw new Error('Function not implemented.');
 }
-

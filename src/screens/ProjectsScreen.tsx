@@ -1,4 +1,3 @@
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
@@ -14,6 +13,7 @@ const ProjectsScreen: React.FC = () => {
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamDescription, setNewTeamDescription] = useState('');
   const [editingTeam, setEditingTeam] = useState<{ id: string | null; nombre: string; descripcion: string }>({ id: null, nombre: '', descripcion: '' });
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -51,50 +51,14 @@ const ProjectsScreen: React.FC = () => {
         console.error('Error al cargar la lista de equipos', error);
       });
   };
-  const handleSaveEditTeam = async () => {
-    if (editingTeam.id && editingTeam.nombre !== '') {
-      const token = await AsyncStorage.getItem('userToken');
-  
-      if (token) {
-        try {
-          const response = await axios.patch(
-            `http://localhost:3000/api/v1/teams/editarteam/${editingTeam.id}`,
-            {
-              nombre: editingTeam.nombre,
-              descripcion: editingTeam.descripcion,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-  
-          console.log('Equipo editado:', response.data);
-  
-          setEditingTeam({ id: null, nombre: '', descripcion: '' });
-          setModalVisible(false);
-  
-          // Realizar un reload de equipos con un retraso de 1 segundo (1000 ms)
-          setTimeout(() => {
-            loadTeams(token);
-          }, 1000);
-        } catch (error) {
-          console.error('Error al editar el equipo', error);
-        }
-      } else {
-        console.error('El token es nulo o no es una cadena válida');
-      }
-    }
-  };
-  
+
   const handleDeleteTeam = async (teamName: string | null) => {
     if (teamName === null) {
       return;
     }
 
     setSelectedTeam(teamName);
-    setModalVisible(true);
+    setDeleteModalVisible(true);
   };
 
   const handleEditTeam = (team: { id: string; nombre: string; descripcion: string }) => {
@@ -118,16 +82,46 @@ const ProjectsScreen: React.FC = () => {
 
       const updatedTeams = teams.filter((team) => team.nombre !== selectedTeam);
       setTeams(updatedTeams);
-      setModalVisible(false);
+      setDeleteModalVisible(false);
     } catch (error) {
       console.error('Error al eliminar el equipo', error);
-      setModalVisible(false);
+      setDeleteModalVisible(false);
     }
 
     setSelectedTeam(null);
   };
 
+  const handleSaveEditTeam = async () => {
+    if (editingTeam.id && editingTeam.nombre !== '') {
+      const token = await AsyncStorage.getItem('userToken');
 
+      try {
+        const response = await axios.patch(
+          `http://localhost:3000/api/v1/teams/editarteam/${editingTeam.id}`,
+          {
+            nombre: editingTeam.nombre,
+            descripcion: editingTeam.descripcion,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log('Equipo editado:', response.data);
+
+        if (token) {
+          loadTeams(token);
+        }
+      } catch (error) {
+        console.error('Error al editar el equipo', error);
+      }
+
+      setEditingTeam({ id: null, nombre: '', descripcion: '' });
+      setModalVisible(false);
+    }
+  };
 
   const handleCancelEditTeam = () => {
     setEditingTeam({ id: null, nombre: '', descripcion: '' });
@@ -197,9 +191,11 @@ const ProjectsScreen: React.FC = () => {
           </View>
         )}
       />
+      
       <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
         <EntypoIcon name="plus" size={30} color="green" />
       </TouchableOpacity>
+      
       <Modal
         transparent={true}
         visible={isModalVisible}
@@ -250,6 +246,26 @@ const ProjectsScreen: React.FC = () => {
               </View>
             </View>
           )}
+        </View>
+      </Modal>
+
+      {/* Modal de confirmación para eliminar equipo */}
+      <Modal
+        transparent={true}
+        visible={isDeleteModalVisible}
+        animationType="slide"
+        onRequestClose={() => {
+          setDeleteModalVisible(false);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.confirmationBox}>
+            <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
+            <View style={styles.modalButtons}>
+              <Button title="Eliminar" onPress={confirmDeleteTeam} />
+              <Button title="Cancelar" onPress={() => setDeleteModalVisible(false)} />
+            </View>
+          </View>
         </View>
       </Modal>
     </View>

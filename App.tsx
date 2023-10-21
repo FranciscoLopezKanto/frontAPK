@@ -15,10 +15,9 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [userIsLoggedIn, setUserIsLoggedIn] = useState(true); // Declaración de userIsLoggedIn y setUserIsLoggedIn
-
+  const [userIsLoggedIn, setUserIsLoggedIn] = useState(false); //Dejar en true si quiere omitir logearse cada vez que se reinicia la app al agregar un cambio
   useEffect(() => {
-    setUserIsLoggedIn(true);
+    setUserIsLoggedIn(false);
   }, []);
 
   return (
@@ -64,7 +63,7 @@ export default function App() {
         <Tab.Screen
           name="Home"
           component={HomeScreen}
-          options={{ headerShown: false }} // Oculta el encabezado para esta pantalla
+          options={{ headerShown: false }} 
         />
         <Tab.Screen
           name="Profile"
@@ -75,7 +74,7 @@ export default function App() {
         <Tab.Screen
           name="Projects"
           component={ProjectsScreen}
-          options={{ headerShown: false }} // Oculta el encabezado para esta pantalla
+          options={{ headerShown: false }} 
         />
       </Tab.Navigator>
     );

@@ -1,11 +1,11 @@
 import React from 'react';
-import { Image, StyleSheet, View, Button } from 'react-native'; // Importa Button desde 'react-native'
+import { Image, StyleSheet, View, Button } from 'react-native'; 
 
-const PiletaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {// Asegúrate de tener 'navigation' como prop
+const PiletaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../public/pileta.gif')} // Reemplaza con la ruta correcta de tu archivo GIF
+        source={require('../public/pileta.gif')} //la ruta archivo GIF
         style={styles.gif}
       />
     

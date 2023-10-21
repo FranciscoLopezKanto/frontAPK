@@ -17,8 +17,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setUserIsLoggedIn }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const navigation = useNavigation(); // Obtén el objeto de navegación utilizando useNavigation.
-
+  const navigation = useNavigation(); 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
     console.log('Toggle password visibility');

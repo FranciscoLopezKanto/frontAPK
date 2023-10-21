@@ -4,13 +4,13 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ImageBackground } from
 const HomeScreen = ({ navigation }: any) => {
   return (
     <ImageBackground
-      source={require('../public/fondo.png')} // Reemplaza con la ruta correcta de tu archivo de fondo
+      source={require('../public/fondo.png')} 
       style={styles.backgroundImage}
     >
       <View style={styles.container}>
         <View style={styles.centeredContent}>
           <Image
-            source={require('../public/pileta.gif')} // Reemplaza con la ruta correcta de tu archivo GIF
+            source={require('../public/pileta.gif')} 
             style={styles.gif}
           />
         </View>
@@ -21,7 +21,7 @@ const HomeScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   gif: {
-    width: 250, // Ajusta el tamaño de la imagen según tus preferencias
+    width: 250, 
     height: 250,
   },
   backgroundImage: {
@@ -29,11 +29,11 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'center', // Centra verticalmente en la pantalla.
-    alignItems: 'center', // Centra horizontalmente en la pantalla.
+    justifyContent: 'center',
+    alignItems: 'center', 
   },
   centeredContent: {
-    alignItems: 'center', // Centra el contenido dentro del contenedor.
+    alignItems: 'center', 
   },
   title: {
     fontSize: 24,
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '80%',
-    marginBottom: 20, // Espacio entre los botones y el título.
+    marginBottom: 20, 
   },
   projectsButton: {
     backgroundColor: 'blue',
