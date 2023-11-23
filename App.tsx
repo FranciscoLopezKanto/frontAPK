@@ -4,18 +4,20 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'; // Importa MaterialCommunityIcons
 import HomeScreen from './src/screens/HomeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignInScreen from './src/screens/SignInScreen';
 import RecoveryScreen from './src/screens/RecoveryScreen';
+import TeamsScreen from './src/screens/TeamsScreen';
 import ProjectsScreen from './src/screens/ProjectsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [userIsLoggedIn, setUserIsLoggedIn] = useState(false); //Dejar en true si quiere omitir logearse cada vez que se reinicia la app al agregar un cambio
+  const [userIsLoggedIn, setUserIsLoggedIn] = useState(true);
   useEffect(() => {
     setUserIsLoggedIn(false);
   }, []);
@@ -34,6 +36,7 @@ export default function App() {
         <Stack.Screen name="Signin" component={SignInScreen} />
         <Stack.Screen name="Home" component={TabsScreen} />
         <Stack.Screen name="Recovery" component={RecoveryScreen} />
+        <Stack.Screen name='Teams' component={TeamsScreen} />
         <Stack.Screen name='Projects' component={ProjectsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -52,10 +55,13 @@ export default function App() {
               iconName = focused ? 'person' : 'person-outline';
             } else if (route.name === 'Projects') {
               iconName = focused ? 'list' : 'list-outline';
+            } else if (route.name === 'Users') {
+           
+              iconName = focused ? 'people' : 'people-outline';
+              return <Ionicons name={iconName} size={size} color={color} />;
             }
 
             iconName = iconName || 'home';
-
             return <Ionicons name={iconName} size={size} color={color} />;
           },
         })}
@@ -76,8 +82,12 @@ export default function App() {
           component={ProjectsScreen}
           options={{ headerShown: false }} 
         />
+        <Tab.Screen
+          name="Users"
+          component={TeamsScreen}
+          options={{ headerShown: false }} 
+        />
       </Tab.Navigator>
     );
   }
 }
-

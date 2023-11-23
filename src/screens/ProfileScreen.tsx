@@ -22,6 +22,22 @@ const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const getProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const response = await axios.get('http://localhost:3000/api/v1/auth/profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(response);
+      await AsyncStorage.setItem('userProfile', JSON.stringify(response.data));
+      setUserProfile(response.data);
+    } catch (error) {
+      console.error('Error al obtener el perfil del usuario', error);
+    }
+  };
+  
   useEffect(() => {
     const getProfile = async () => {
       try {
@@ -324,6 +340,5 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
-function getProfile() {
-  throw new Error('Function not implemented.');
-}
+
+

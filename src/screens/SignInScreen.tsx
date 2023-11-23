@@ -30,6 +30,7 @@ const RegisterScreen = ({ navigation }: any) => {
         email,
         password,
       });
+      console.log(response);
       setTimeout(() => {
         navigation.navigate('Login' as never);//te lleva al login al registrarse para logearse
       }, 2000);

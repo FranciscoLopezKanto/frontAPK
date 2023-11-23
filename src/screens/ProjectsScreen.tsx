@@ -7,13 +7,15 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import EntypoIcon from 'react-native-vector-icons/Entypo';
 
 const ProjectsScreen: React.FC = () => {
-  const [teams, setTeams] = useState<any[]>([]); 
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState<{ id: string; nombre: string; descripcion: string } | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [newTeamName, setNewTeamName] = useState('');
-  const [newTeamDescription, setNewTeamDescription] = useState('');
-  const [editingTeam, setEditingTeam] = useState<{ id: string | null; nombre: string; descripcion: string }>({ id: null, nombre: '', descripcion: '' });
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDescription, setNewProjectDescription] = useState('');
+  const [editingProject, setEditingProject] = useState<{ id: string | null; nombre: string; descripcion: string }>({ id: null, nombre: '', descripcion: '' });
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [isAddGroupModalVisible, setAddGroupModalVisible] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -21,7 +23,7 @@ const ProjectsScreen: React.FC = () => {
       try {
         const token = await AsyncStorage.getItem('userToken');
         if (token) {
-          loadTeams(token);
+          loadProjects(token);
         } else {
           console.error('No se encontró un token de usuario en AsyncStorage.');
         }
@@ -37,219 +39,175 @@ const ProjectsScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation]);
 
-  const loadTeams = (token: string) => {
+const handleEditProject = (project: { id: string; nombre: string; descripcion: string }) => {
+  setEditingProject(project);
+  setModalVisible(true);
+};
+
+const confirmDeleteProject = async () => {
+  if (!selectedProject || !selectedProject.nombre) {
+    return;
+  }
+
+  const token = await AsyncStorage.getItem('userToken');
+
+  try {
+    await axios.delete(`http://localhost:3000/api/v1/projects/${selectedProject.nombre}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const updatedProjects = projects.filter((project) => project.nombre !== selectedProject.nombre);
+    setProjects(updatedProjects);
+    setDeleteModalVisible(false);
+  } catch (error) {
+    console.error('Error al eliminar el proyecto', error);
+    setDeleteModalVisible(false);
+  }
+
+  setSelectedProject(null);
+};
+
+  const loadProjects = (token: string) => {
     axios
-      .get('http://localhost:3000/api/v1/teams', {
+      .get('http://localhost:3000/api/v1/projects/proyectos', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
       .then((response) => {
-        setTeams(response.data);
+        setProjects(response.data);
       })
       .catch((error) => {
-        console.error('Error al cargar la lista de equipos', error);
+        console.error('Error al cargar la lista de proyectos', error);
       });
   };
 
-  const handleDeleteTeam = async (teamName: string | null) => {
-    if (teamName === null) {
+  const handleDeleteProject = async (projectName: string | null) => {
+    if (projectName === null) {
       return;
     }
 
-    setSelectedTeam(teamName);
-    setDeleteModalVisible(true);
+    const projectToDelete = projects.find(project => project.nombre === projectName);
+
+    if (projectToDelete) {
+      setSelectedProject(projectToDelete);
+      setDeleteModalVisible(true);
+    } else {
+      console.error('No se encontró el proyecto correspondiente en los datos.');
+    }
   };
 
-  const handleEditTeam = (team: { id: string; nombre: string; descripcion: string }) => {
-    setEditingTeam(team);
-    setModalVisible(true);
+  const handleAddGroups = (project: { id: string; nombre: string; descripcion: string }) => {
+    setAddGroupModalVisible(true);
+    setSelectedProject(project);
   };
 
-  const confirmDeleteTeam = async () => {
-    if (selectedTeam === null) {
+  const handleAddGroup = async () => {
+    if (!selectedProject || !newGroupName) {
+      console.error('Selecciona un proyecto y proporciona un nombre de grupo válido');
       return;
     }
 
     const token = await AsyncStorage.getItem('userToken');
+    if (!token) {
+      console.error('No se encontró un token de usuario en AsyncStorage.');
+      return;
+    }
+
+    const data = {
+      projectName: selectedProject.nombre,
+      groupName: newGroupName,
+    };
 
     try {
-      await axios.delete(`http://localhost:3000/api/v1/teams/${selectedTeam}`, {
+      const response = await axios.post('http://localhost:3000/api/v1/projects/agregarGrupo', data, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const updatedTeams = teams.filter((team) => team.nombre !== selectedTeam);
-      setTeams(updatedTeams);
-      setDeleteModalVisible(false);
+      console.log('Grupo agregado:', response.data);
+      loadProjects(token);
+
     } catch (error) {
-      console.error('Error al eliminar el equipo', error);
-      setDeleteModalVisible(false);
+      console.error('Error al agregar el grupo al proyecto', error);
     }
 
-    setSelectedTeam(null);
+    setNewGroupName('');
+    setAddGroupModalVisible(false);
   };
 
-  const handleSaveEditTeam = async () => {
-    if (editingTeam.id && editingTeam.nombre !== '') {
-      const token = await AsyncStorage.getItem('userToken');
-
-      try {
-        const response = await axios.patch(
-          `http://localhost:3000/api/v1/teams/editarteam/${editingTeam.id}`,
-          {
-            nombre: editingTeam.nombre,
-            descripcion: editingTeam.descripcion,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        console.log('Equipo editado:', response.data);
-
-        if (token) {
-          loadTeams(token);
-        }
-      } catch (error) {
-        console.error('Error al editar el equipo', error);
-      }
-
-      setEditingTeam({ id: null, nombre: '', descripcion: '' });
-      setModalVisible(false);
-    }
-  };
-
-  const handleCancelEditTeam = () => {
-    setEditingTeam({ id: null, nombre: '', descripcion: '' });
-    setModalVisible(false);
-  };
-
-  const handleAddTeam = async () => {
-    if (newTeamName !== '') {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
-
-        if (token !== null && typeof token === 'string') {
-          const newTeam = {
-            name: newTeamName,
-            descripcion: newTeamDescription,
-          };
-
-          const response = await axios.post('http://localhost:3000/api/v1/teams/crearTeam', newTeam, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          console.log('Equipo creado:', response.data);
-
-          if (token !== null) {
-            loadTeams(token);
-          }
-        } else {
-          console.error('El token es nulo o no es una cadena válida');
-        }
-      } catch (error) {
-        console.error('Error al crear el equipo', error);
-      }
-
-      setNewTeamName('');
-      setNewTeamDescription('');
-      setModalVisible(false);
-    }
+  const handleCancelAddGroup = () => {
+    setNewGroupName('');
+    setAddGroupModalVisible(false);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.selectText}>Selecciona un equipo:</Text>
+      <Text style={styles.selectText}>Selecciona un proyecto:</Text>
       <FlatList
-        data={teams}
+        data={projects}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.teamItem}>
-            <View style={styles.teamInfo}>
-              <Text style={styles.teamName}>{item.nombre}</Text>
-              <Text style={styles.teamDescription}>{item.descripcion}</Text>
+          <View style={styles.projectItem}>
+            <View style={styles.projectInfo}>
+              <Text style={styles.projectName}>{item.nombre}</Text>
+              <Text style={styles.projectDescription}>{item.descripcion}</Text>
             </View>
-            <View style={styles.teamIcons}>
+            <View style={styles.projectIcons}>
               <Icon
                 name="pencil"
                 size={20}
                 color="blue"
-                onPress={() => handleEditTeam(item)}
+                onPress={() => handleEditProject(item)}
               />
               <TouchableOpacity
-                onPress={() => handleDeleteTeam(item.nombre)}
+                onPress={() => handleDeleteProject(item.nombre)}
               >
                 <Icon name="times" size={20} color="red" />
               </TouchableOpacity>
+              <Icon
+                name="plus"
+                size={20}
+                color="green"
+                onPress={() => handleAddGroups(item)}
+              />
             </View>
           </View>
         )}
       />
-      
+
       <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
         <EntypoIcon name="plus" size={30} color="green" />
       </TouchableOpacity>
-      
+
       <Modal
         transparent={true}
-        visible={isModalVisible}
+        visible={isAddGroupModalVisible}
         animationType="slide"
         onRequestClose={() => {
-          setModalVisible(false);
+          setAddGroupModalVisible(false);
         }}
       >
         <View style={styles.modalContainer}>
-          {editingTeam.id ? ( // Edit team modal
-            <View style={styles.confirmationBox}>
-              <Text>Editar Equipo</Text>
-              <Text>Nombre:</Text>
-              <TextInput
-                value={editingTeam.nombre}
-                onChangeText={(text) => setEditingTeam({ ...editingTeam, nombre: text })}
-                style={styles.input}
-              />
-              <Text>Descripción:</Text>
-              <TextInput
-                value={editingTeam.descripcion}
-                onChangeText={(text) => setEditingTeam({ ...editingTeam, descripcion: text })}
-                style={styles.input}
-              />
-              <View style={styles.modalButtons}>
-                <Button title="Guardar" onPress={handleSaveEditTeam} />
-                <Button title="Cancelar" onPress={handleCancelEditTeam} />
-              </View>
+          <View style={styles.confirmationBox}>
+            <Text>Agregar Grupo</Text>
+            <Text>Nombre del Grupo:</Text>
+            <TextInput
+              value={newGroupName}
+              onChangeText={(text) => setNewGroupName(text)}
+              style={styles.input}
+            />
+            <View style={styles.modalButtons}>
+              <Button title="Agregar" onPress={handleAddGroup} />
+              <Button title="Cancelar" onPress={handleCancelAddGroup} />
             </View>
-          ) : ( // New team creation modal
-            <View style={styles.confirmationBox}>
-              <Text>Crear Nuevo Equipo</Text>
-              <Text>Nombre:</Text>
-              <TextInput
-                value={newTeamName}
-                onChangeText={(text) => setNewTeamName(text)}
-                style={styles.input}
-              />
-              <Text>Descripción:</Text>
-              <TextInput
-                value={newTeamDescription}
-                onChangeText={(text) => setNewTeamDescription(text)}
-                style={styles.input}
-              />
-              <View style={styles.modalButtons}>
-                <Button title="Crear" onPress={handleAddTeam} />
-                <Button title="Cancelar" onPress={() => setModalVisible(false)} />
-              </View>
-            </View>
-          )}
+          </View>
         </View>
       </Modal>
 
-      {/* Modal de confirmación para eliminar equipo */}
       <Modal
         transparent={true}
         visible={isDeleteModalVisible}
@@ -260,9 +218,9 @@ const ProjectsScreen: React.FC = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.confirmationBox}>
-            <Text>¿Estás seguro de que deseas eliminar el equipo {selectedTeam}?</Text>
+            <Text>¿Estás seguro de que deseas eliminar el proyecto {selectedProject?.nombre}?</Text>
             <View style={styles.modalButtons}>
-              <Button title="Eliminar" onPress={confirmDeleteTeam} />
+              <Button title="Eliminar" onPress={confirmDeleteProject} />
               <Button title="Cancelar" onPress={() => setDeleteModalVisible(false)} />
             </View>
           </View>
@@ -278,12 +236,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  
   selectText: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  teamItem: {
+  projectItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -295,18 +254,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: 300,
   },
-  teamInfo: {
+  projectInfo: {
     flex: 1,
   },
-  teamName: {
+  projectName: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  teamDescription: {
+  projectDescription: {
     fontSize: 14,
     color: 'gray',
   },
-  teamIcons: {
+  projectIcons: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
