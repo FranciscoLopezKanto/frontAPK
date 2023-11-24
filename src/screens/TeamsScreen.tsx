@@ -219,10 +219,9 @@ const TeamsScreen: React.FC = () => {
   
       const members = response.data;
   
-      // Show members in a modal
-      setMembersModalData(members); // Assume you have a state variable for modal data
-      setMembersModalVisible(true); // Assume you have a state variable for modal visibility
-  
+      
+      setMembersModalData(members); 
+      setMembersModalVisible(true); 
     } catch (error) {
       console.error('Error al obtener los miembros del equipo desde el backend', error);
     }
