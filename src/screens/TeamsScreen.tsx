@@ -5,8 +5,9 @@ import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import EntypoIcon from 'react-native-vector-icons/Entypo';
+import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons'; // Añadir esta línea
 
-const ProjectsScreen: React.FC = () => {
+const TeamsScreen: React.FC = () => {
   const [teams, setTeams] = useState<any[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; nombre: string; descripcion: string } | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -17,6 +18,9 @@ const ProjectsScreen: React.FC = () => {
   const [isAddMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const navigation = useNavigation();
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [membersModalData, setMembersModalData] = useState<any[]>([]);
+  const [membersModalVisible, setMembersModalVisible] = useState(false);
 
   useEffect(() => {
     const getTokenAndLoadTeams = async () => {
@@ -43,10 +47,9 @@ const ProjectsScreen: React.FC = () => {
     if (teamName === null) {
       return;
     }
-  
-    // Encuentra el equipo correspondiente en tu estado 'teams'
+
     const teamToDelete = teams.find(team => team.nombre === teamName);
-  
+
     if (teamToDelete) {
       setSelectedTeam(teamToDelete);
       setDeleteModalVisible(true);
@@ -54,7 +57,7 @@ const ProjectsScreen: React.FC = () => {
       console.error('No se encontró el equipo correspondiente en los datos.');
     }
   };
-  
+
   const loadTeams = async (token: string) => {
     try {
       const response = await axios.get('http://localhost:3000/api/v1/teams/equipos', {
@@ -66,6 +69,26 @@ const ProjectsScreen: React.FC = () => {
       response.data.id
     } catch (error) {
       console.error('Error al cargar la lista de equipos', error);
+    }
+  };
+  const handleTeamItemPress = async (team: { id: string; nombre: string; descripcion: string }) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No se encontró un token de usuario en AsyncStorage.');
+        return;
+      }
+
+      const response = await axios.get(`http://localhost:3000/api/v1/teams/${team.id}/miembros`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setTeamMembers(response.data);
+      setAddMemberModalVisible(true);
+    } catch (error) {
+      console.error('Error al cargar los miembros del equipo', error);
     }
   };
   const handleAddMembers = (team: { id: string; nombre: string; descripcion: string }) => {
@@ -99,7 +122,8 @@ const ProjectsScreen: React.FC = () => {
 
       console.log('Miembro agregado:', response.data);
 
-      
+      // Puedes agregar lógica adicional aquí si es necesario
+
     } catch (error) {
       console.error('Error al agregar el miembro al equipo', error);
     }
@@ -112,8 +136,6 @@ const ProjectsScreen: React.FC = () => {
     setNewMemberEmail('');
     setAddMemberModalVisible(false);
   };
-
-  
 
   const handleEditTeam = (team: { id: string; nombre: string; descripcion: string }) => {
     setEditingTeam(team);
@@ -128,13 +150,13 @@ const ProjectsScreen: React.FC = () => {
     const token = await AsyncStorage.getItem('userToken');
 
     try {
-      await axios.delete(`http://localhost:3000/api/v1/teams/${selectedTeam}`, {
+      await axios.delete(`http://localhost:3000/api/v1/teams/${selectedTeam.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const updatedTeams = teams.filter((team) => team.nombre !== selectedTeam);
+      const updatedTeams = teams.filter((team) => team.id !== selectedTeam.id);
       setTeams(updatedTeams);
       setDeleteModalVisible(false);
     } catch (error) {
@@ -181,7 +203,31 @@ const ProjectsScreen: React.FC = () => {
     setEditingTeam({ id: null, nombre: '', descripcion: '' });
     setModalVisible(false);
   };
-
+  const handleShowMembers = async (team: { id: string; nombre: string; descripcion: string }) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No se encontró un token de usuario en AsyncStorage.');
+        return;
+      }
+  
+      const response = await axios.get(`http://localhost:3000/api/v1/teams/${team.id}/miembros`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const members = response.data;
+  
+      // Show members in a modal
+      setMembersModalData(members); // Assume you have a state variable for modal data
+      setMembersModalVisible(true); // Assume you have a state variable for modal visibility
+  
+    } catch (error) {
+      console.error('Error al obtener los miembros del equipo desde el backend', error);
+    }
+  };
+  
   const handleAddTeam = async () => {
     if (newTeamName !== '') {
       try {
@@ -230,24 +276,26 @@ const ProjectsScreen: React.FC = () => {
               <Text style={styles.teamDescription}>{item.id}</Text>
             </View>
             <View style={styles.teamIcons}>
-              <Icon
-                name="pencil"
-                size={20}
-                color="blue"
-                onPress={() => handleEditTeam(item)}
-              />
-              <TouchableOpacity
-                onPress={() => handleDeleteTeam(item.nombre)}
-              >
-                <Icon name="times" size={20} color="red" />
-              </TouchableOpacity>
-              <Icon
-                name="plus"
-                size={20}
-                color="green"
-                onPress={() => handleAddMembers(item)}
-              />
-            </View>
+  <Icon
+    name="pencil"
+    size={20}
+    color="blue"
+    onPress={() => handleEditTeam(item)}
+  />
+  <TouchableOpacity onPress={() => handleShowMembers(item)}>
+    <MaterialCommunityIcon name="eye" size={20} color="green" />
+  </TouchableOpacity>
+  <TouchableOpacity onPress={() => handleDeleteTeam(item.nombre)}>
+    <Icon name="times" size={20} color="red" />
+  </TouchableOpacity>
+  <Icon
+    name="plus"
+    size={20}
+    color="green"
+    onPress={() => handleAddMembers(item)}
+  />
+</View>
+
           </View>
         )}
       />
@@ -352,7 +400,30 @@ const ProjectsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+      <Modal
+  transparent={true}
+  visible={membersModalVisible}
+  animationType="slide"
+  onRequestClose={() => {
+    setMembersModalVisible(false);
+  }}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.confirmationBox}>
+      <Text>Miembros del Equipo</Text>
+      <FlatList
+        data={membersModalData}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <Text>{`Nombre de usuario: ${item.name}`}</Text>
+        )}
+      />
+      <Button title="Cerrar" onPress={() => setMembersModalVisible(false)} />
     </View>
+  </View>
+</Modal>
+    </View>
+    
   );
 };
 
@@ -433,4 +504,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProjectsScreen;
+export default TeamsScreen;
