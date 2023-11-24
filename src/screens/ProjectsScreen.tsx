@@ -70,9 +70,29 @@ const ProjectsScreen: React.FC = () => {
     }
   };
 
-  const handleAddGroups = (project: { id: string; nombre: string; descripcion: string }) => {
-    setAddGroupModalVisible(true);
-    setSelectedProject(project);
+  const handleAddTeams = async (projectName: string, newGroupName: string) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const teamToAdd = "equipo para agregar"; // Reemplazar con tu lógica para obtener el equipo
+      const response = await axios.post(
+        'http://localhost:3000/api/v1/proyectos/addequipos',
+        {
+          equipo: teamToAdd,
+          projectName: projectName,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log('Team added to project:', response.data);
+      if (token) {
+        loadProjects(token);
+      }
+    } catch (error) {
+      console.error('Error adding team to project', error);
+    }
   };
 
   const handleCreateProject = async () => {
@@ -104,7 +124,6 @@ const ProjectsScreen: React.FC = () => {
         console.error('Error al crear el proyecto', error);
         console.log(newProjectName);
         console.log(newProjectDescription);
-       
       }
 
       setNewProjectName('');
@@ -179,9 +198,6 @@ const ProjectsScreen: React.FC = () => {
     setEditingProject({ id: null, nombre: '', descripcion: '' });
     setModalVisible(false);
   };
-
-  // Resto del código...
-
   return (
     <View style={styles.container}>
       <Text style={styles.selectText}>Selecciona un proyecto:</Text>
@@ -199,18 +215,22 @@ const ProjectsScreen: React.FC = () => {
                 name="pencil"
                 size={20}
                 color="blue"
-                onPress={() => handleEditProject(item)}
+                onPress={() => {
+                  handleEditProject(item);
+                  setModalVisible(true);
+                }}
               />
-              <TouchableOpacity
-                onPress={() => handleDeleteProject(item.nombre)}
-              >
+              <TouchableOpacity onPress={() => handleDeleteProject(item.nombre)}>
                 <Icon name="times" size={20} color="red" />
               </TouchableOpacity>
               <Icon
                 name="plus"
                 size={20}
                 color="green"
-                onPress={() => handleAddGroups(item)}
+                onPress={() => {
+                  setAddGroupModalVisible(true);
+                  setSelectedProject(item);
+                }}
               />
             </View>
           </View>
@@ -220,6 +240,67 @@ const ProjectsScreen: React.FC = () => {
       <TouchableOpacity style={styles.addButton} onPress={() => setCreateModalVisible(true)}>
         <EntypoIcon name="plus" size={30} color="green" />
       </TouchableOpacity>
+
+      {/* Modal para agregar equipos */}
+      <Modal
+        transparent={true}
+        visible={isAddGroupModalVisible}
+        animationType="slide"
+        onRequestClose={() => {
+          setAddGroupModalVisible(false);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.confirmationBox}>
+            <Text>Agregar Equipo al Proyecto</Text>
+            <Text>Nuevo Equipo:</Text>
+            <TextInput
+              value={newGroupName}
+              onChangeText={(text) => setNewGroupName(text)}
+              style={styles.input}
+            />
+            <View style={styles.modalButtons}>
+              <Button
+                title="Agregar Equipo"
+                onPress={() => handleAddTeams(selectedProject?.nombre || '', newGroupName)}
+              />
+              <Button title="Cancelar" onPress={() => setAddGroupModalVisible(false)} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal para editar proyectos */}
+      <Modal
+        transparent={true}
+        visible={isModalVisible}
+        animationType="slide"
+        onRequestClose={() => {
+          setModalVisible(false);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.confirmationBox}>
+            <Text>Editar Proyecto</Text>
+            <Text>Nuevo Nombre:</Text>
+            <TextInput
+              value={editingProject.nombre}
+              onChangeText={(text) => setEditingProject({ ...editingProject, nombre: text })}
+              style={styles.input}
+            />
+            <Text>Nueva Descripción:</Text>
+            <TextInput
+              value={editingProject.descripcion}
+              onChangeText={(text) => setEditingProject({ ...editingProject, descripcion: text })}
+              style={styles.input}
+            />
+            <View style={styles.modalButtons}>
+              <Button title="Guardar Cambios" onPress={handleSaveEditProject} />
+              <Button title="Cancelar" onPress={handleCancelEditProject} />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         transparent={true}
@@ -254,6 +335,8 @@ const ProjectsScreen: React.FC = () => {
     </View>
   );
 };
+
+      
 const styles = StyleSheet.create({
   container: {
     flex: 1,
