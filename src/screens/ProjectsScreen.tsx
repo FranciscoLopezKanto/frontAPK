@@ -16,6 +16,7 @@ const ProjectsScreen: React.FC = () => {
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [isAddGroupModalVisible, setAddGroupModalVisible] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -39,39 +40,9 @@ const ProjectsScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation]);
 
-const handleEditProject = (project: { id: string; nombre: string; descripcion: string }) => {
-  setEditingProject(project);
-  setModalVisible(true);
-};
-
-const confirmDeleteProject = async () => {
-  if (!selectedProject || !selectedProject.nombre) {
-    return;
-  }
-
-  const token = await AsyncStorage.getItem('userToken');
-
-  try {
-    await axios.delete(`http://localhost:3000/api/v1/projects/${selectedProject.nombre}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const updatedProjects = projects.filter((project) => project.nombre !== selectedProject.nombre);
-    setProjects(updatedProjects);
-    setDeleteModalVisible(false);
-  } catch (error) {
-    console.error('Error al eliminar el proyecto', error);
-    setDeleteModalVisible(false);
-  }
-
-  setSelectedProject(null);
-};
-
   const loadProjects = (token: string) => {
     axios
-      .get('http://localhost:3000/api/v1/projects/proyectos', {
+      .get('http://localhost:3000/api/v1/proyectos/misproyectos', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -104,45 +75,112 @@ const confirmDeleteProject = async () => {
     setSelectedProject(project);
   };
 
-  const handleAddGroup = async () => {
-    if (!selectedProject || !newGroupName) {
-      console.error('Selecciona un proyecto y proporciona un nombre de grupo válido');
+  const handleCreateProject = async () => {
+    if (newProjectName !== '') {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        console.log(token);
+        if (token !== null && typeof token === 'string') {
+          const newProject = {
+            name: newProjectName,
+            descripcion: newProjectDescription,
+          };
+
+          const response = await axios.post('http://localhost:3000/api/v1/proyectos/crearProyecto', newProject, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          console.log('Proyecto creado:', response.data);
+
+          if (token !== null) {
+            loadProjects(token);
+          }
+        } else {
+          console.error('El token es nulo o no es una cadena válida');
+        }
+      } catch (error) {
+        console.error('Error al crear el proyecto', error);
+        console.log(newProjectName);
+        console.log(newProjectDescription);
+       
+      }
+
+      setNewProjectName('');
+      setNewProjectDescription('');
+      setCreateModalVisible(false);
+    }
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!selectedProject || !selectedProject.nombre) {
       return;
     }
 
     const token = await AsyncStorage.getItem('userToken');
-    if (!token) {
-      console.error('No se encontró un token de usuario en AsyncStorage.');
-      return;
-    }
-
-    const data = {
-      projectName: selectedProject.nombre,
-      groupName: newGroupName,
-    };
 
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/projects/agregarGrupo', data, {
+      await axios.delete(`http://localhost:3000/api/v1/projects/${selectedProject.nombre}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      console.log('Grupo agregado:', response.data);
-      loadProjects(token);
-
+      const updatedProjects = projects.filter((project) => project.nombre !== selectedProject.nombre);
+      setProjects(updatedProjects);
+      setDeleteModalVisible(false);
     } catch (error) {
-      console.error('Error al agregar el grupo al proyecto', error);
+      console.error('Error al eliminar el proyecto', error);
+      setDeleteModalVisible(false);
     }
 
-    setNewGroupName('');
-    setAddGroupModalVisible(false);
+    setSelectedProject(null);
   };
 
-  const handleCancelAddGroup = () => {
-    setNewGroupName('');
-    setAddGroupModalVisible(false);
+  const handleEditProject = (project: { id: string; nombre: string; descripcion: string }) => {
+    setEditingProject(project);
+    setModalVisible(true);
   };
+
+  const handleSaveEditProject = async () => {
+    if (editingProject.id && editingProject.nombre !== '') {
+      const token = await AsyncStorage.getItem('userToken');
+
+      try {
+        const response = await axios.patch(
+          `http://localhost:3000/api/v1/projects/editarProyecto/${editingProject.id}`,
+          {
+            nombre: editingProject.nombre,
+            descripcion: editingProject.descripcion,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log('Proyecto editado:', response.data);
+
+        if (token) {
+          loadProjects(token);
+        }
+      } catch (error) {
+        console.error('Error al editar el proyecto', error);
+      }
+
+      setEditingProject({ id: null, nombre: '', descripcion: '' });
+      setModalVisible(false);
+    }
+  };
+
+  const handleCancelEditProject = () => {
+    setEditingProject({ id: null, nombre: '', descripcion: '' });
+    setModalVisible(false);
+  };
+
+  // Resto del código...
 
   return (
     <View style={styles.container}>
@@ -179,49 +217,36 @@ const confirmDeleteProject = async () => {
         )}
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity style={styles.addButton} onPress={() => setCreateModalVisible(true)}>
         <EntypoIcon name="plus" size={30} color="green" />
       </TouchableOpacity>
 
       <Modal
         transparent={true}
-        visible={isAddGroupModalVisible}
+        visible={isCreateModalVisible}
         animationType="slide"
         onRequestClose={() => {
-          setAddGroupModalVisible(false);
+          setCreateModalVisible(false);
         }}
       >
         <View style={styles.modalContainer}>
           <View style={styles.confirmationBox}>
-            <Text>Agregar Grupo</Text>
-            <Text>Nombre del Grupo:</Text>
+            <Text>Crear Nuevo Proyecto</Text>
+            <Text>Nombre:</Text>
             <TextInput
-              value={newGroupName}
-              onChangeText={(text) => setNewGroupName(text)}
+              value={newProjectName}
+              onChangeText={(text) => setNewProjectName(text)}
+              style={styles.input}
+            />
+            <Text>Descripción:</Text>
+            <TextInput
+              value={newProjectDescription}
+              onChangeText={(text) => setNewProjectDescription(text)}
               style={styles.input}
             />
             <View style={styles.modalButtons}>
-              <Button title="Agregar" onPress={handleAddGroup} />
-              <Button title="Cancelar" onPress={handleCancelAddGroup} />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        transparent={true}
-        visible={isDeleteModalVisible}
-        animationType="slide"
-        onRequestClose={() => {
-          setDeleteModalVisible(false);
-        }}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.confirmationBox}>
-            <Text>¿Estás seguro de que deseas eliminar el proyecto {selectedProject?.nombre}?</Text>
-            <View style={styles.modalButtons}>
-              <Button title="Eliminar" onPress={confirmDeleteProject} />
-              <Button title="Cancelar" onPress={() => setDeleteModalVisible(false)} />
+              <Button title="Crear" onPress={handleCreateProject} />
+              <Button title="Cancelar" onPress={() => setCreateModalVisible(false)} />
             </View>
           </View>
         </View>
@@ -229,7 +254,6 @@ const confirmDeleteProject = async () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

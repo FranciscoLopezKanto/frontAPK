@@ -63,6 +63,7 @@ const ProjectsScreen: React.FC = () => {
         },
       });
       setTeams(response.data);
+      response.data.id
     } catch (error) {
       console.error('Error al cargar la lista de equipos', error);
     }
@@ -226,7 +227,7 @@ const ProjectsScreen: React.FC = () => {
           <View style={styles.teamItem}>
             <View style={styles.teamInfo}>
               <Text style={styles.teamName}>{item.nombre}</Text>
-              <Text style={styles.teamDescription}>{item.descripcion}</Text>
+              <Text style={styles.teamDescription}>{item.id}</Text>
             </View>
             <View style={styles.teamIcons}>
               <Icon

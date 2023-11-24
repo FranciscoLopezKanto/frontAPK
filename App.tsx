@@ -17,7 +17,7 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [userIsLoggedIn, setUserIsLoggedIn] = useState(true);
+  const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
   useEffect(() => {
     setUserIsLoggedIn(false);
   }, []);
