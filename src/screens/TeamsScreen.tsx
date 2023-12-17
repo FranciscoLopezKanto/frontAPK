@@ -1,11 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import EntypoIcon from 'react-native-vector-icons/Entypo';
-import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons'; // Añadir esta línea
+import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+const backendUrl = process.env.REACT_APP_BACKEND_URL; //no se esta usando por bug que no se pudo resolver
 
 const TeamsScreen: React.FC = () => {
   const [teams, setTeams] = useState<any[]>([]);
@@ -272,7 +273,7 @@ const TeamsScreen: React.FC = () => {
           <View style={styles.teamItem}>
             <View style={styles.teamInfo}>
               <Text style={styles.teamName}>{item.nombre}</Text>
-              <Text style={styles.teamDescription}>{item.id}</Text>
+              <Text style={styles.teamDescription}>{item.descripcion}</Text>
             </View>
             <View style={styles.teamIcons}>
   <Icon
@@ -414,7 +415,8 @@ const TeamsScreen: React.FC = () => {
         data={membersModalData}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <Text>{`Nombre de usuario: ${item.name}`}</Text>
+          <Text>{`Nombre de usuario: ${item.name} (${item.rol})`}</Text>
+
         )}
       />
       <Button title="Cerrar" onPress={() => setMembersModalVisible(false)} />

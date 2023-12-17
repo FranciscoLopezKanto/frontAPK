@@ -1,23 +1,23 @@
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, FlatList, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, Button, FlatList, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import EntypoIcon from 'react-native-vector-icons/Entypo';
+const backendUrl = process.env.REACT_APP_BACKEND_URL; //no se esta usando por bug que no se pudo resolver
+
+interface Project {
+  id: string;
+  nombre: string;
+  descripcion: string;
+}
 
 const ProjectsScreen: React.FC = () => {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [selectedProject, setSelectedProject] = useState<{ id: string; nombre: string; descripcion: string } | null>(null);
-  const [isModalVisible, setModalVisible] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
-  const [editingProject, setEditingProject] = useState<{ id: string | null; nombre: string; descripcion: string }>({ id: null, nombre: '', descripcion: '' });
-  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [isAddGroupModalVisible, setAddGroupModalVisible] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
-  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
   useEffect(() => {
     const getToken = async () => {
@@ -40,164 +40,59 @@ const ProjectsScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation]);
 
-  const loadProjects = (token: string) => {
-    axios
-      .get('http://localhost:3000/api/v1/proyectos/misproyectos', {
+  const loadProjects = async (token: string) => {
+    try {
+      const response = await axios.get<Project[]>('http://localhost:3000/api/v1/proyectos/misproyectos', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      })
-      .then((response) => {
-        setProjects(response.data);
-      })
-      .catch((error) => {
-        console.error('Error al cargar la lista de proyectos', error);
       });
-  };
 
-  const handleDeleteProject = async (projectName: string | null) => {
-    if (projectName === null) {
-      return;
-    }
-
-    const projectToDelete = projects.find(project => project.nombre === projectName);
-
-    if (projectToDelete) {
-      setSelectedProject(projectToDelete);
-      setDeleteModalVisible(true);
-    } else {
-      console.error('No se encontró el proyecto correspondiente en los datos.');
-    }
-  };
-
-  const handleAddTeams = async (projectName: string, newGroupName: string) => {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      const teamToAdd = "equipo para agregar"; // Reemplazar con tu lógica para obtener el equipo
-      const response = await axios.post(
-        'http://localhost:3000/api/v1/proyectos/addequipos',
-        {
-          equipo: teamToAdd,
-          projectName: projectName,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log('Team added to project:', response.data);
-      if (token) {
-        loadProjects(token);
-      }
+      setProjects(response.data);
     } catch (error) {
-      console.error('Error adding team to project', error);
+      console.error('Error al cargar la lista de proyectos', error);
     }
   };
 
   const handleCreateProject = async () => {
-    if (newProjectName !== '') {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
-        console.log(token);
-        if (token !== null && typeof token === 'string') {
-          const newProject = {
-            name: newProjectName,
-            descripcion: newProjectDescription,
-          };
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (token !== null && typeof token === 'string') {
+        const newProject = {
+          name: newProjectName,
+          descripcion: newProjectDescription,
+        };
+        console.log(newProject);
+        const response = await axios.post<Project>('http://localhost:3000/api/v1/proyectos/crearProyecto', newProject, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-          const response = await axios.post('http://localhost:3000/api/v1/proyectos/crearProyecto', newProject, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+        console.log('Proyecto creado:', response.data);
 
-          console.log('Proyecto creado:', response.data);
-
-          if (token !== null) {
-            loadProjects(token);
-          }
-        } else {
-          console.error('El token es nulo o no es una cadena válida');
+        if (token !== null) {
+          loadProjects(token);
         }
-      } catch (error) {
-        console.error('Error al crear el proyecto', error);
-        console.log(newProjectName);
-        console.log(newProjectDescription);
+      } else {
+        console.error('El token es nulo o no es una cadena válida');
       }
 
       setNewProjectName('');
       setNewProjectDescription('');
       setCreateModalVisible(false);
-    }
-  };
-
-  const confirmDeleteProject = async () => {
-    if (!selectedProject || !selectedProject.nombre) {
-      return;
-    }
-
-    const token = await AsyncStorage.getItem('userToken');
-
-    try {
-      await axios.delete(`http://localhost:3000/api/v1/projects/${selectedProject.nombre}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const updatedProjects = projects.filter((project) => project.nombre !== selectedProject.nombre);
-      setProjects(updatedProjects);
-      setDeleteModalVisible(false);
     } catch (error) {
-      console.error('Error al eliminar el proyecto', error);
-      setDeleteModalVisible(false);
-    }
-
-    setSelectedProject(null);
-  };
-
-  const handleEditProject = (project: { id: string; nombre: string; descripcion: string }) => {
-    setEditingProject(project);
-    setModalVisible(true);
-  };
-
-  const handleSaveEditProject = async () => {
-    if (editingProject.id && editingProject.nombre !== '') {
-      const token = await AsyncStorage.getItem('userToken');
-
-      try {
-        const response = await axios.patch(
-          `http://localhost:3000/api/v1/projects/editarProyecto/${editingProject.id}`,
-          {
-            nombre: editingProject.nombre,
-            descripcion: editingProject.descripcion,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        console.log('Proyecto editado:', response.data);
-
-        if (token) {
-          loadProjects(token);
-        }
-      } catch (error) {
-        console.error('Error al editar el proyecto', error);
-      }
-
-      setEditingProject({ id: null, nombre: '', descripcion: '' });
-      setModalVisible(false);
+      console.error('Error al crear el proyecto', error);
     }
   };
 
-  const handleCancelEditProject = () => {
-    setEditingProject({ id: null, nombre: '', descripcion: '' });
-    setModalVisible(false);
+  const handleProjectDetails = (projectName: string) => {
+    console.log('proyecto', projectName);
+    navigation.navigate('ProjectDetail', { projectName } as { projectName: string });
+
   };
+  
+
   return (
     <View style={styles.container}>
       <Text style={styles.selectText}>Selecciona un proyecto:</Text>
@@ -205,103 +100,15 @@ const ProjectsScreen: React.FC = () => {
         data={projects}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.projectItem}>
-            <View style={styles.projectInfo}>
-              <Text style={styles.projectName}>{item.nombre}</Text>
-              <Text style={styles.projectDescription}>{item.descripcion}</Text>
-            </View>
-            <View style={styles.projectIcons}>
-              <Icon
-                name="pencil"
-                size={20}
-                color="blue"
-                onPress={() => {
-                  handleEditProject(item);
-                  setModalVisible(true);
-                }}
-              />
-              <TouchableOpacity onPress={() => handleDeleteProject(item.nombre)}>
-                <Icon name="times" size={20} color="red" />
-              </TouchableOpacity>
-              <Icon
-                name="plus"
-                size={20}
-                color="green"
-                onPress={() => {
-                  setAddGroupModalVisible(true);
-                  setSelectedProject(item);
-                }}
-              />
-            </View>
-          </View>
+          <ProjectItem project={item} handleProjectDetails={handleProjectDetails} />
         )}
       />
 
       <TouchableOpacity style={styles.addButton} onPress={() => setCreateModalVisible(true)}>
-        <EntypoIcon name="plus" size={30} color="green" />
+        <Text>Agregar Proyecto</Text>
       </TouchableOpacity>
 
-      {/* Modal para agregar equipos */}
-      <Modal
-        transparent={true}
-        visible={isAddGroupModalVisible}
-        animationType="slide"
-        onRequestClose={() => {
-          setAddGroupModalVisible(false);
-        }}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.confirmationBox}>
-            <Text>Agregar Equipo al Proyecto</Text>
-            <Text>Nuevo Equipo:</Text>
-            <TextInput
-              value={newGroupName}
-              onChangeText={(text) => setNewGroupName(text)}
-              style={styles.input}
-            />
-            <View style={styles.modalButtons}>
-              <Button
-                title="Agregar Equipo"
-                onPress={() => handleAddTeams(selectedProject?.nombre || '', newGroupName)}
-              />
-              <Button title="Cancelar" onPress={() => setAddGroupModalVisible(false)} />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal para editar proyectos */}
-      <Modal
-        transparent={true}
-        visible={isModalVisible}
-        animationType="slide"
-        onRequestClose={() => {
-          setModalVisible(false);
-        }}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.confirmationBox}>
-            <Text>Editar Proyecto</Text>
-            <Text>Nuevo Nombre:</Text>
-            <TextInput
-              value={editingProject.nombre}
-              onChangeText={(text) => setEditingProject({ ...editingProject, nombre: text })}
-              style={styles.input}
-            />
-            <Text>Nueva Descripción:</Text>
-            <TextInput
-              value={editingProject.descripcion}
-              onChangeText={(text) => setEditingProject({ ...editingProject, descripcion: text })}
-              style={styles.input}
-            />
-            <View style={styles.modalButtons}>
-              <Button title="Guardar Cambios" onPress={handleSaveEditProject} />
-              <Button title="Cancelar" onPress={handleCancelEditProject} />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
+      {/* Modal para crear proyectos */}
       <Modal
         transparent={true}
         visible={isCreateModalVisible}
@@ -336,14 +143,29 @@ const ProjectsScreen: React.FC = () => {
   );
 };
 
-      
+interface ProjectItemProps {
+  project: Project;
+  handleProjectDetails: (projectName: string) => void;
+}
+
+const ProjectItem: React.FC<ProjectItemProps> = ({ project, handleProjectDetails }) => (
+  <TouchableOpacity onPress={() => handleProjectDetails(project.nombre)}>
+    <View style={styles.projectItem}>
+      <View style={styles.projectInfo}>
+        <Text style={styles.projectName}>{project.nombre}</Text>
+        <Text style={styles.projectDescription}>{project.descripcion}</Text>
+      </View>
+    </View>
+  </TouchableOpacity>
+);
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
   selectText: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -372,11 +194,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'gray',
   },
-  projectIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -398,13 +215,9 @@ const styles = StyleSheet.create({
   addButton: {
     position: 'absolute',
     bottom: 20,
-    right: 20,
     backgroundColor: '#fff',
-    borderRadius: 30,
-    width: 60,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 10,
+    borderRadius: 10,
   },
   input: {
     height: 40,

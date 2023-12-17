@@ -1,33 +1,40 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, Image, TouchableOpacity, ImageBackground, Modal, Button } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-
-
+const backendUrl = process.env.REACT_APP_BACKEND_URL; //no se esta usando por bug que no se pudo resolver
 const showPasswordIcon = require('../public/MostrarContra.png');
 const backgroundImage = require('../public/fondo.png');
+
 interface LoginScreenProps {
   setUserIsLoggedIn: (value: boolean) => void;
 }
+
 const LoginScreen: React.FC<LoginScreenProps> = ({ setUserIsLoggedIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
-    console.log('Toggle password visibility');
   };
-
-
 
   const handleLogin = async (email: string, password: string) => {
     setError(false);
-    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError(true);
+      setErrorMessage('Ingresa un correo electrónico válido.');
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost:3000/api/v1/auth/login', {
         email,
@@ -35,18 +42,27 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setUserIsLoggedIn }) => {
       });
       const token = response.data.token;
       await AsyncStorage.setItem('userToken', token);
-      console.log(token);
       setUserIsLoggedIn(true);
-      console.log("usuario logeado");
+
+      setModalMessage('Usuario logeado correctamente');
+      setModalVisible(true);
+
       setTimeout(() => {
+        setModalVisible(false);
         navigation.navigate('Home' as never);
-      }, 2000);
+      }, 1000);
     } catch (e: any) {
       setError(true);
-      console.error("Error al iniciar sesión:", e);
-      setErrorMessage("Ocurrió un error al iniciar sesión.");
+      console.error('Error al iniciar sesión:', e);
+
+      if (e.response && e.response.status === 401) {
+        setErrorMessage('Correo electrónico o contraseña incorrectos.');
+      } else {
+        setErrorMessage('Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.');
+      }
     }
   };
+
   return (
     <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
       <View style={styles.container}>
@@ -70,21 +86,30 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setUserIsLoggedIn }) => {
               />
               <TouchableOpacity onPress={togglePasswordVisibility} style={styles.passwordVisibilityButton}>
                 <Image source={showPasswordIcon} style={styles.passwordVisibilityIcon} />
-              
               </TouchableOpacity>
             </View>
           </View>
-          <Text style={styles.forgotPasswordLink} onPress={() => navigation.navigate('Recovery'as never)}>
+          <Text style={styles.errorMessage}>{error && errorMessage}</Text>
+          <Text style={styles.forgotPasswordLink} onPress={() => navigation.navigate('Recovery' as never)}>
             Olvidé mi contraseña
           </Text>
           <TouchableOpacity onPress={() => handleLogin(email, password)} style={styles.button}>
             <Text style={styles.buttonText}>Iniciar Sesión</Text>
           </TouchableOpacity>
-          <Text onPress={() => navigation.navigate('Signin'as never)} style={styles.link}>
+          <Text onPress={() => navigation.navigate('Signin' as never)} style={styles.link}>
             ¿No eres un piletero? Conviértete en uno aquí.
           </Text>
         </View>
       </View>
+
+      <Modal animationType="slide" transparent={true} visible={modalVisible}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalMessage}>{modalMessage}</Text>
+            <Button title="Cerrar" onPress={() => setModalVisible(false)} />
+          </View>
+        </View>
+      </Modal>
     </ImageBackground>
   );
 };
@@ -176,29 +201,32 @@ const styles = StyleSheet.create({
     width: 25,
     height: 25,
   },
+  errorMessage: {
+    color: 'red',
+    marginBottom: 16,
+  },
   forgotPasswordLink: {
     color: 'blue',
     marginLeft: -100,
     alignItems: 'flex-end',
     marginBottom: 20,
   },
-  goToPiletaButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: 'green',
-    borderRadius: 15,
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    height: 40,
-    width: 150,
-    marginBottom: -100,
-    marginRight: 85,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  goToPiletaButtonText: {
-    color: 'white',
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 30,
+    borderRadius: 12,
+    elevation: 5,
+  },
+  modalMessage: {
+    fontSize: 18,
     textAlign: 'center',
-    marginTop: 5,
-    fontSize: 20,
+    marginBottom: 20,
   },
 });
 

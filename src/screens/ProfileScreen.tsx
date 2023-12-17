@@ -3,6 +3,7 @@ import { View, Text, Button, StyleSheet, Image, TouchableOpacity, Modal, ScrollV
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
+const backendUrl = process.env.REACT_APP_BACKEND_URL; //no se esta usando por bug que no se pudo resolver
 
 // Importa las imágenes locales
 const pinguinoImage = require('../public/pinguino.png');
@@ -48,7 +49,6 @@ const ProfileScreen: React.FC = () => {
           }
         });
         console.log(response);
-        // Almacena los datos del perfil en AsyncStorage
         await AsyncStorage.setItem('userProfile', JSON.stringify(response.data));
 
         setUserProfile(response.data);
@@ -95,15 +95,12 @@ const ProfileScreen: React.FC = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-
       setUserProfile({ ...userProfile, username: updatedUsername, password: updatedPassword });
-
-      // Muestra un mensaje de cambio 
       setLogoutMessage('Cambio realizado exitosamente');
 
       setTimeout(() => {
         setLogoutMessage(null);
-        // Realiza un nuevo llamado a getProfile para actualizar la pantalla con los datos actualizados
+
         getProfile();
       }, 1000);
 
@@ -145,8 +142,9 @@ const ProfileScreen: React.FC = () => {
         </TouchableOpacity>
         {userProfile ? (
           <View style={styles.profileInfo}>
-            <Text style={styles.username}>Nombre de Usuario: {userProfile.username}</Text>
+            <Text style={styles.username}>Nombre de Usuario: {userProfile.name}</Text>
             <Text style={styles.email}>Email: {userProfile.email}</Text>
+            <Text style={styles.email}>Rol: {userProfile.rol}</Text>
           </View>
         ) : (
           <Text>Cargando perfil...</Text>

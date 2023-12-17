@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Image, TouchableOpacity, ImageBackground, Modal, Button } from 'react-native';
 import axios from 'axios';
+import { Picker } from '@react-native-picker/picker';
+const backendUrl = process.env.REACT_APP_BACKEND_URL; //no se esta usando por bug que no se pudo resolver
 
 const showPasswordIcon = require('../public/MostrarContra.png');
 const backgroundImage = require('../public/fondo.png');
@@ -8,10 +10,13 @@ const backgroundImage = require('../public/fondo.png');
 const RegisterScreen = ({ navigation }: any) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [rol, setRol] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -20,27 +25,45 @@ const RegisterScreen = ({ navigation }: any) => {
   const handleRegister = async (
     name: string,
     email: string,
+    rol: string,
     password: string
   ) => {
     setError(false);
+
+    if (!name || !email || !rol || !password) {
+      setError(true);
+      setErrorMessage('Todos los campos son obligatorios.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError(true);
+      setErrorMessage('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
 
     try {
       const response = await axios.post(`http://localhost:3000/api/v1/auth/register`, {
         name,
         email,
         password,
+        role: rol,
       });
-      console.log(response);
+
+      setModalMessage('Usuario registrado correctamente');
+      setModalVisible(true);
+
       setTimeout(() => {
-        navigation.navigate('Login' as never);//te lleva al login al registrarse para logearse
+        setModalVisible(false);
+        navigation.navigate('Login' as never);
       }, 2000);
-      console.log("usuario registrado");
+
+      console.log(response);
     } catch (e: any) {
       setError(true);
-      console.error("Error al iniciar sesión:", e); 
-      setErrorMessage("Ocurrió un error al iniciar sesión.");
+      console.error('Error al registrar usuario:', e);
+      setErrorMessage('Ocurrió un error al registrar usuario.');
     }
-    
   };
 
   return (
@@ -61,6 +84,16 @@ const RegisterScreen = ({ navigation }: any) => {
             onChangeText={(text: string) => setEmail(text)}
             style={styles.input}
           />
+          <Picker
+            selectedValue={rol}
+            style={styles.picker}
+            onValueChange={(itemValue: React.SetStateAction<string>) => setRol(itemValue)}
+          >
+            <Picker.Item label="Selecciona un rol" value="" />
+            <Picker.Item label="Programador" value="programador" />
+            <Picker.Item label="Scrum Master" value="Scrum Master" />
+            <Picker.Item label="Diseñador" value="Diseñador" />
+          </Picker>
           <View style={styles.passwordInputContainer}>
             <View style={styles.passwordInput}>
               <TextInput
@@ -81,14 +114,27 @@ const RegisterScreen = ({ navigation }: any) => {
           {error && <Text style={styles.errorText}>{errorMessage}</Text>}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => handleRegister(username, email, password)}
+            onPress={() => handleRegister(username, email, rol, password)}
           >
             <Text style={styles.buttonText}>Registrarse</Text>
           </TouchableOpacity>
           <Text onPress={() => navigation.navigate('Login')} style={styles.link}>
-            Ya tienes una cuenta? Inicia Sesión.
+            ¿Ya tienes una cuenta? Inicia Sesión.
           </Text>
         </View>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalMessage}>{modalMessage}</Text>
+              <Button title="Cerrar" onPress={() => setModalVisible(false)} />
+            </View>
+          </View>
+        </Modal>
       </View>
     </ImageBackground>
   );
@@ -110,7 +156,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingBottom: 10,
     borderRadius: 5,
-    
   },
   titleWithOutline: {
     textShadowColor: 'rgba(255, 0, 0, 0.75)',
@@ -123,10 +168,18 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   input: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fff',
     width: 240,
     marginBottom: 20,
     padding: 5,
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 10,
+  },
+  picker: {
+    height: 40,
+    width: 240,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: 'black',
     borderRadius: 10,
@@ -142,7 +195,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: '#0052cc',
+    backgroundColor: '#004080',
     borderRadius: 15,
     alignItems: 'center',
     height: 40,
@@ -185,6 +238,23 @@ const styles = StyleSheet.create({
   passwordVisibilityIcon: {
     width: 25,
     height: 25,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 30,
+    borderRadius: 12,
+    elevation: 5,
+  },
+  modalMessage: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
   },
 });
 
